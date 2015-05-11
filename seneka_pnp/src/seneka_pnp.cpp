@@ -194,7 +194,7 @@ public:
 	  
 	  boost::mutex lock;
 	  lock.lock();
-	  bool sensornodeposevalid = sensornodePosValid();
+	  bool sensornodeposevalid = true;//sensornodePosValid();
 	  lock.unlock();
 	  
 	  seneka_pnp::QuanjoManipulationResult  manipulation;
@@ -776,6 +776,7 @@ public:
   }
   
   bool toPickedUp(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("toPickedUp");
 
 	  bool ret = true;
 	  ros::Publisher display_publisher = node_handle_.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
@@ -1523,6 +1524,7 @@ public:
   
   
   bool deployFront(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("deployFront");
 	  
 	    moveit::planning_interface::MoveGroup::Plan plan, mergedPlan;
 	    dualArmJointState state;
@@ -1597,6 +1599,7 @@ public:
   }
 
   bool deployedFrontToHome(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("deployedFrontToHome");
 	  
 		moveit::planning_interface::MoveGroup::Plan plan, lplan,rplan, merged_plan;
 		dualArmJointState state;
@@ -1641,6 +1644,7 @@ public:
   }
   
   bool toDeployFrontPreGrasp(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("toDeployFrontPreGrasp");
 
 	  moveit::planning_interface::MoveGroup::Plan plan, lplan,rplan, merged_plan;
 	  dualArmJointState state;
@@ -1704,6 +1708,7 @@ public:
   //TRANSITION:avoidCollisionState
   //Moves the arm to a collision free state
   bool toCollisionFree(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("toCollisionFree");
     
     bool ret = false;
 
@@ -1736,7 +1741,8 @@ public:
 
 
   //moves the arms to the initial pickup pose
-  bool toPreGrasp(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+  bool toPreGrasp(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both) {
+	  ROS_INFO("toPreGrasp");
 
 	moveit::planning_interface::MoveGroup::Plan plan, lplan,rplan, merged_plan;
 	dualArmJointState state;
@@ -1778,6 +1784,7 @@ public:
   }
   
   bool packedFrontToHome(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("packedFrontToHome");
 
 	  moveit::planning_interface::MoveGroup::Plan plan, lplan,rplan, merged_plan;
 	  dualArmJointState state;
@@ -2071,6 +2078,7 @@ public:
   }
 
   bool toPrePack(move_group_interface::MoveGroup* group_l, move_group_interface::MoveGroup* group_r, move_group_interface::MoveGroup* group_both){
+	  ROS_INFO("toPrePack");
     
 	moveit::planning_interface::MoveGroup::Plan plan, lplan,rplan, mergedPlan;
 	dualArmJointState state;
@@ -2746,6 +2754,13 @@ public:
 			  } else {
 				  return "unknown_state";
 			  }
+		  } 	  
+		  if(transition.compare("toPrePackRear") == 0){
+			  if(toPrePackRear(group_l_,group_r_,group_both_)){
+				  return "prepack-rear";
+			  } else {
+				  return "unknown_state";
+			  }
 		  } 
 		  	  
 		  return "pregrasp-rear";
@@ -2783,10 +2798,60 @@ public:
 			  } else {
 				  return "unknown_state";
 			  }
+		  }      
+		  
+		  if(transition.compare("packedRearDrop") == 0){
+			  if(packedRearDrop(group_l_,group_r_,group_both_)){
+				  return "packed-rear-drop";
+			  } else {
+				  return "unknown_state";
+			  }
+		  }   
+		  
+		  if(transition.compare("deployRear") == 0){
+			  if(deployRear(group_l_,group_r_,group_both_)){
+				  return "deploy-rear";
+			  } else {
+				  return "unknown_state";
+			  }
 		  }     
 		  
 		  return "packed-rear";
 	  }
+	  
+    else if(currentState.compare("deploy-rear") == 0){
+
+    	//Transitions
+    	if(transition.compare("deployRearDrop") == 0){
+    		if(deployRearDrop(group_l_,group_r_,group_both_)){
+    			return "deployed-rear";
+    		} else {
+    			return "unknown_state";
+    		}
+    	}    
+
+    	return "deploy-rear";
+    }
+    else if(currentState.compare("deployed-rear") == 0){
+
+    	//Transitions
+    	if(transition.compare("toPreGraspRear") == 0){
+    		if(toPreGraspRear(group_l_,group_r_,group_both_)){
+    			return "pickedup-rear";
+    		} else {
+    			return "unknown_state";
+    		}
+    	}  
+    	if(transition.compare("toPrePackRear") == 0){
+    		if(toPrePackRear(group_l_,group_r_,group_both_)){
+    			return "prepack-rear";
+    		} else {
+    			return "unknown_state";
+    		}
+    	}     
+
+    	return "deployed-rear";
+    }
 
     //------PICKED_UP-------------------------------------------
     else if(currentState.compare("pickedup") == 0){
@@ -2867,6 +2932,13 @@ public:
     	if(transition.compare("toHome") == 0){
     		if(toHome(group_l_,group_r_,group_both_)){
     			return "home";
+    		} else {
+    			return "unknown_state";
+    		}
+    	}    
+    	else if(transition.compare("toPackedRear") == 0){
+    		if(toPackedRear(group_l_,group_r_,group_both_)){
+    			return "packed-rear";
     		} else {
     			return "unknown_state";
     		}
