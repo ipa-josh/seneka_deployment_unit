@@ -2321,6 +2321,8 @@ public:
 	  
 	  group_both->setJointValueTarget(state.both.position);	  
 	  if(seneka_pnp_tools::multiplan(group_both,&plan)){
+	  	  smoothSetPayload(mass_/2);
+	  	  smoothSetPayload(mass_/2);
 		  sleep(safety_duration_);
 		  initTrajectoryMonitoring();
 		  group_both->asyncExecute(plan);
