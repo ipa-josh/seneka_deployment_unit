@@ -3,6 +3,7 @@
   Author: Matthias Nösner  
 */
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include <iostream>
 #include <cmath>
@@ -3016,7 +3017,9 @@ public:
   //--------------------------------------- Load on Init -----------------------------------------------------------------------------------------
   void loadTeachedPoints(std::vector<std::vector<double> >* vec_r,std::vector<std::vector<double> >* vec_l){
 
-	  SerializeIO *ser = new SerializeIO("/home/quanjo/groovy_workspace/catkin_ws/src/seneka_deployment_unit/seneka_pnp/common/teached_dual_arm_movement.def",'i');
+	  std::string path = ros::package::getPath("seneka_pnp");
+	  std::string concatpath = path + "/common/teached_dual_arm_movement.def";
+	  SerializeIO *ser = new SerializeIO(concatpath.c_str(),'i');
 	  std::vector<std::vector<double> > tmp;
 
 	  ser->openArray("dual_arm_movement");

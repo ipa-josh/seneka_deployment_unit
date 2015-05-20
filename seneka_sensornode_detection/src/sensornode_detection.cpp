@@ -2,6 +2,7 @@
 * Author: Matthias Nösner
 ********************** */
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -429,11 +430,15 @@ void sensornodeLocalCoordinates(){
 
 //Load Parameters positions of markers,handles and triggers in reference to the sensorsonde using my own SerializeIO class + scaling the values.
 bool loadParameters(std::vector<fiducialmarker>* afiducialmarkers, std::vector<handle>* ahandles, trigger_points* atriggers, pose* aentry){
+	
+  std::string path = ros::package::getPath("seneka_sensornode_detection");
+  std::string concatpath = path + "/launch/sensorsonde_coordinates.def";
   
-  SerializeIO *ser = new SerializeIO("/home/quanjo/groovy_workspace/catkin_ws/src/seneka_deployment_unit/seneka_sensornode_detection/launch/sensorsonde_coordinates.def",'i');
+  SerializeIO *ser = new SerializeIO(concatpath.c_str(),'i');
   if(simulation_){
     ser->close();
-    ser = new SerializeIO("/home/quanjo/groovy_workspace/catkin_ws/src/seneka_deployment_unit/seneka_sensornode_detection/launch/sensorsonde_coordinates_sim.def",'i');
+    concatpath = path + "/launch/sensorsonde_coordinates_sim.def";
+    ser = new SerializeIO(concatpath.c_str(),'i');
   }
 
   fiducialmarker fiducial1, fiducial2, fiducial3, fiducial4, fiducial5, fiducial6;
