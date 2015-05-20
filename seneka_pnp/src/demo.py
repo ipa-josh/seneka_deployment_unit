@@ -56,7 +56,7 @@ while not rospy.is_shutdown():
 	elif st=="home":
 		setTransisitionAndWait("homeToPreGraspRear", "pregrasp-rear", st)
 		print "insert sensor node"
-		input("Press Enter to continue...")
+		raw_input("Press Enter to continue...")
 		
 	#loop
 	elif st=="pregrasp-rear" or st=="deployed-rear":
