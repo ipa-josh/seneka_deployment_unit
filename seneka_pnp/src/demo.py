@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 import rospy
 import seneka_pnp.srv
+import signal
+import sys
 
+shutdown_req=False
+def signal_handler(signal, frame):
+        global shutdown_req
+        print('You pressed Ctrl+C!')
+        shutdown_req=True
+        
 
 print "init",
 rospy.init_node('seneka_demo')
+        
+signal.signal(signal.SIGINT, signal_handler)
 
 rospy.wait_for_service('/seneka_pnp/getState')
 rospy.wait_for_service('/seneka_pnp/setTransition')
@@ -47,7 +57,10 @@ def setTransisitionAndWait(tr, exp, cur):
 	return False
 			
 st=""
-while not rospy.is_shutdown():
+running=True
+while running:
+	if (st=="collision_free" or st=="home" or st=="packed-rear") and (rospy.is_shutdown() or shutdown_req):
+		break
 	st = getState()
 	
 	#at startup
@@ -55,18 +68,23 @@ while not rospy.is_shutdown():
 		setTransisitionAndWait("toHome", "home", st)
 	elif st=="home":
 		setTransisitionAndWait("homeToPreGraspRear", "pregrasp-rear", st)
-		print "insert sensor node"
-		raw_input("Press Enter to continue...")
 		
 	#loop
 	elif st=="pregrasp-rear" or st=="deployed-rear":
+		if st=="deployed-rear":
+			setTransisition("payloadWithNode")
 		setTransisitionAndWait("toPrePackRear", "prepack-rear", st)
+		if st=="pregrasp-rear":
+			setTransisition("payloadWithNode")
+			print "insert sensor node"
+			raw_input("Press Enter to continue...")
 	elif st=="prepack-rear":
 		setTransisitionAndWait("toPackedRear", "packed-rear", st)
 	elif st=="packed-rear":
 		setTransisitionAndWait("deployRear", "deploy-rear", st)
 	elif st=="deploy-rear":
-		setTransisitionAndWait("deployRearDrop", "deployed-rear", st)
+		setTransisitionAndWait("toPrePackRear", "prepack-rear", st)
+		#setTransisitionAndWait("deployRearDrop", "deployed-rear", st)
 		
 	#failure case
 	else:
@@ -74,4 +92,11 @@ while not rospy.is_shutdown():
 		print "please go back to a safe starting position"
 		print "exiting..."
 		exit()
+		
+if st==st=="packed-rear":
+	print "remove sensor node"
+	setTransisition("payloadWithoutNode")
+	raw_input("Press Enter to continue to get back to home position...")
+	setTransisition("packedRearDropToHome")
+
 print "last state was: ", st

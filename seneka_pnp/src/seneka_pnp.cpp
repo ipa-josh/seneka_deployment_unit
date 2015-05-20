@@ -1210,6 +1210,7 @@ public:
 
 	  group_both->setJointValueTarget(state.both.position);	  
 	  if(seneka_pnp_tools::multiplan(group_both,&plan)){
+	      plan = seneka_pnp_tools::scaleTrajSpeed(plan,0.25);//scale trajectory
 		  initTrajectoryMonitoring();
 		  group_both->asyncExecute(plan);
 		  ret = monitorArmMovement(true,true);
@@ -2322,8 +2323,6 @@ public:
 	  
 	  group_both->setJointValueTarget(state.both.position);	  
 	  if(seneka_pnp_tools::multiplan(group_both,&plan)){
-	  	  smoothSetPayload(mass_/2);
-	  	  smoothSetPayload(mass_/2);
 		  sleep(safety_duration_);
 		  initTrajectoryMonitoring();
 		  group_both->asyncExecute(plan);
@@ -2355,7 +2354,7 @@ public:
 	  }		  
 
 	  //------------to packed-rear------------------
-	  if(ret){
+	  /*if(ret){
 		  ret = false;
 		  if(!seneka_pnp_tools::getArmState(armstates_, "packed-rear", &state))
 			  return false;
@@ -2367,7 +2366,7 @@ public:
 			  group_both->asyncExecute(plan);
 			  ret = monitorArmMovement(true,true);
 		  }		
-	  }
+	  }*/
 	  
 	  return ret;
   }
@@ -2598,6 +2597,15 @@ public:
 		  seneka_pnp::setTransition::Response &res)
   {
 	  std::string transition_tmp = req.transition; 
+	  
+	  if(transition_tmp.compare("payloadWithNode") == 0) {
+		  smoothSetPayload(mass_/2);
+		  smoothSetPayload(mass_/2);
+		  return true;
+	  } else if(transition_tmp.compare("payloadWithoutNode") == 0) {
+		  smoothSetPayload(unloadmass_);
+		  return true;
+	  }
 
 	  if(transition_tmp.compare("toPickedUp") == 0 || transition_tmp.compare("toPickedUpRear") == 0){
 		  if(!sensornodePosValid()){
@@ -2831,7 +2839,23 @@ public:
     		} else {
     			return "unknown_state";
     		}
-    	}    
+    	}   
+
+    	//Transitions
+    	if(transition.compare("toPreGraspRear") == 0){
+    		if(toPreGraspRear(group_l_,group_r_,group_both_)){
+    			return "pickedup-rear";
+    		} else {
+    			return "unknown_state";
+    		}
+    	}  
+    	if(transition.compare("toPrePackRear") == 0){
+    		if(toPrePackRear(group_l_,group_r_,group_both_)){
+    			return "prepack-rear";
+    		} else {
+    			return "unknown_state";
+    		}
+    	}      
 
     	return "deploy-rear";
     }
